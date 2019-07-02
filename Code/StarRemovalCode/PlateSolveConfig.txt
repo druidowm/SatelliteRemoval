@@ -1,0 +1,33 @@
+[Files]
+
+work_dir : 
+write_log_dir : 
+fits_dir : ../../Images/FitsImages
+
+[Pipeline]
+
+#boolean
+read_wfpdb : False
+read_csv : False
+read_fits : False
+output_header_file : False
+output_header_fits : False
+invert_image : False
+extract_sources : False
+solve_plate : False
+output_solution_db : False
+output_wcs_file : False
+get_reference_catalogs : False
+solve_recursive : False
+calibrate_photometry : False
+improve_photometry : False
+output_calibration_db : False
+output_sources_db : False
+output_sources_csv : False
+
+#integer
+processes : 2
+process_max_tasks : 0
+
+#float
+wait_start : 1.0
