@@ -3,27 +3,28 @@
 work_dir : 
 write_log_dir : 
 fits_dir : ../../Images/FitsImages
+write_source_dir : Sources
 
 [Pipeline]
 
 #boolean
-read_wfpdb : False
-read_csv : False
-read_fits : False
-output_header_file : False
-output_header_fits : False
+read_wfpdb : True
+read_csv : True
+read_fits : True
+output_header_file : True
+output_header_fits : True
 invert_image : False
-extract_sources : False
-solve_plate : False
-output_solution_db : False
-output_wcs_file : False
-get_reference_catalogs : False
-solve_recursive : False
-calibrate_photometry : False
-improve_photometry : False
-output_calibration_db : False
-output_sources_db : False
-output_sources_csv : False
+extract_sources : True
+solve_plate : True
+output_solution_db : True
+output_wcs_file : True
+get_reference_catalogs : True
+solve_recursive : True
+calibrate_photometry : True
+improve_photometry : True
+output_calibration_db : True
+output_sources_db : True
+output_sources_csv : True
 
 #integer
 processes : 2
@@ -31,3 +32,11 @@ process_max_tasks : 0
 
 #float
 wait_start : 1.0
+
+
+[Database]
+write_sources_csv : True
+use_ucac4_db : True
+
+[Programs]
+sextractor_path : 
