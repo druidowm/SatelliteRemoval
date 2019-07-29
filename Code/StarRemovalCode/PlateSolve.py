@@ -21,7 +21,9 @@ c = Client(Client.default_url)
 c.login("ujazexnqbmqqikyl")
 
 kwargs = dict()
-#allow_commercial_use=False, allow_modifications=False, publicly_visible=False)
+#kwargs["allow_commercial_use"]=False
+#kwargs["allow_modifications"]=False
+#kwargs["publicly_visible"]=False
 kwargs['scale_type'] = "ul"
 #kwargs['scale_lower'] = 0.1
 #kwargs['scale_upper'] = 60.0
@@ -35,15 +37,12 @@ kwargs['scale_type'] = "ul"
 
 
 upres = c.upload(args["input"], **kwargs)
-print("made it here!!!************************************************************")
 
 stat = upres['status']
 if stat != 'success':
     print('Upload failed: status', stat)
     print(upres)
     sys.exit(-1)
-
-print("Made it here!!!********************************************************")
 
 sub_id = upres['subid']
 solved_id = None
@@ -63,8 +62,6 @@ while True:
             break
     time.sleep(5)
 
-print("Made it here!!!********************************************************")
-
 while True:
     stat = c.job_status(solved_id, justdict=True)
     print('Got job status:', stat)
@@ -73,25 +70,23 @@ while True:
         break
     time.sleep(5)
 
-print("Made it here!!!********************************************************")
-
 
 if success:
     # we have a jobId for retrieving results
     retrieveurls = []
-    url = server.replace('/api/', '/wcs_file/%i' % solved_id)
+    #url = server.replace('/api/', '/wcs_file/%i' % solved_id)
 
-    retrieveurls.append((url, True))
-    url = server.replace('/api/', '/kml_file/%i/' % solved_id)
+    #retrieveurls.append((url, True))
+    #url = server.replace('/api/', '/kml_file/%i/' % solved_id)
 
-    retrieveurls.append((url, True))
+    #retrieveurls.append((url, True))
     url = server.replace('/api/', '/new_fits_file/%i/' % solved_id)
 
-    retrieveurls.append((url, True))
+    #retrieveurls.append((url, True))
 
     url = server.replace('/api/', '/corr_file/%i/' % solved_id)
 
-    retrieveurls.append((url, True))
+    #retrieveurls.append((url, True))
 
     out = args["input"][0:-5]+"_corr"+args["input"][-5:]
     
@@ -104,6 +99,8 @@ if success:
     print('Wrote to', out)
 
     result = c.annotate_data(solved_id)
+    print("annotations")
+    print(result["annotations"])
     with open("results.json",'w') as f:
         f.write(python2json(result))
 
