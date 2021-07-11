@@ -103,7 +103,9 @@ def findRemoveTrail(imgNoStars, imgNoBackground, imgStars, starX, starY, starR, 
         showImage(imgNoStars, "Image Without Stars", inverted)
     if showProgress:
         print("Searching for satellite trail...")
-    p1,p2,imgPC = DS.findSatelliteScale(imgNoStars, debug = True, imgStars = imgNoBackground)
+    p1,p2 = DS.findSatelliteScale(imgNoStars, debug = True, imgStars = imgNoBackground)
+
+    imgPC = PC(imgNoStars)
 
     if showProgress:
         print("Satellite trail found\n")

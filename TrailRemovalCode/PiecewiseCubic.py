@@ -1,6 +1,9 @@
 import numpy as np
 import math
 
+import multiprocessing
+from functools import partial
+
 class PiecewiseCubic:
     def __init__(self, img):
         x = np.arange(0,4,1)
@@ -22,26 +25,16 @@ class PiecewiseCubic:
         x2y3 = x2*y3
         x3y2 = x3*y2
         x3y3 = x3*y3
-        A = np.array([zeros,
-                                  x, y, x2, y2,
-                                  x3, y3, xy,
-                                  x2y, xy2,
-                                  x2y2, x3y,
-                                  xy3, x3y2,
-                                  x2y3, x3y3]).T
+        A = np.array([zeros, x, y, x2, y2, x3, y3, xy, x2y, xy2, x2y2, x3y, xy3, x3y2, x2y3, x3y3]).T
 
         self.functions = [[None for j in range(0,img.shape[1]-3)] for i in range(0,img.shape[0]-3)]
         for i in range(0,img.shape[0]-3):
+            if i%100 == 0:
+                print(i)
             for j in range(0,img.shape[1]-3):
-                mask = img[i:i+4,j:j+4]
-
-                mask = mask.ravel()
-
-                coeff = np.linalg.solve(A, mask)
-                self.functions[i][j] = coeff
+                self.functions[i][j] = np.linalg.solve(A, img[i:i+4,j:j+4].ravel())
 
         self.shape = img.shape
-
 
 
     def __call__(self,x,y):

@@ -230,6 +230,9 @@ def findOffsetX2(p1, p2, m, b, starX, starY, starR, gX, gY, gR, hotX, hotY, img,
     perpRange = np.arange(-gaussRange,gaussRange+step,step)
     gaussian = gauss(perpRange,sDev)
 
+    plt.plot(perpRange,gaussian)
+    plt.show()
+
     startI = int(np.round(gaussRange/step))
     endI = int(np.round(len(perpLine)-1-gaussRange/step))
 
@@ -288,13 +291,15 @@ def findOffsetX2(p1, p2, m, b, starX, starY, starR, gX, gY, gR, hotX, hotY, img,
         plt.title("Trail With Wobble Fit")
 
         plt.plot(x2,y2)
+        plt.plot(trailX,trailY)
+        plt.plot([p1[0],p2[0]],[p1[1],p2[1]])
         
         plt.show()
 
     return offset
     
 
-def fitBrightnessPolyX(img, p1, p2, m, b, offset, PC, starX, starY, starR, hotX, hotY):
+def fitBrightnessPolyX(img, p1, p2, m, b, offset, PC, starX, starY, starR, gX, gY, gR, hotX, hotY):
     parDists = getParLine(img, p1, p2, m, b)
     perpDists = parDists*0
     x,y = GT.getXY(parDists,perpDists,m,b,offset)
@@ -307,7 +312,7 @@ def fitBrightnessPolyX(img, p1, p2, m, b, offset, PC, starX, starY, starR, hotX,
     axes[0].plot(parDists,brightness)
     axes[0].set_title("Britghtness with Stars")
 
-    mask = getValueMask(img, x, y, starX, starY, starR, hotX, hotY, 1)
+    mask = getValueMask(img, x, y, starX, starY, starR, gX, gY, gR, hotX, hotY, 1)
     interpolateSignal(parDists, brightness, mask)
 
     axes[1].plot(parDists,brightness)
@@ -369,12 +374,12 @@ def fitBrightnessPolyX2(img, p1, p2, m, b, offset, PC, starX, starY, starR, hotX
 
     return bPol
 
-def estimateBackground(img, m, b, offset, starX, starY, starR, hotX, hotY):
+def estimateBackground(img, m, b, offset, starX, starY, starR, gX, gY, gR, hotX, hotY):
     parDist,perpDist = GT.getDistancesHorizontal(m, b, img.shape[1], img.shape[0], offset)
     par,perp,band = getNonTrailBand(parDist, perpDist, img, 10, 20)
     x,y = GT.getXY(par,perp,m,b,offset)
 
-    mask = getValueMask(img, x, y, starX, starY, starR, hotX, hotY, 1)
+    mask = getValueMask(img, x, y, starX, starY, starR, gX, gY, gR, hotX, hotY, 1)
     par = par[mask]
     band = band[mask]
 
@@ -390,7 +395,7 @@ def estimateBackground(img, m, b, offset, starX, starY, starR, hotX, hotY):
     return mean
 
 
-def fitGaussianX(img, m, b, bright, offset, starX, starY, starR, hotX, hotY):
+def fitGaussianX(img, m, b, bright, offset, starX, starY, starR, gX, gY, gR, hotX, hotY):
     parDist,perpDist = GT.getDistancesHorizontal(m, b, img.shape[1], img.shape[0], offset)
     parF,perpF,imgF = getTrailBand(parDist, perpDist, img, 6)
     x,y = GT.getXY(parF,perpF,m,b,offset)
@@ -402,7 +407,7 @@ def fitGaussianX(img, m, b, bright, offset, starX, starY, starR, hotX, hotY):
     axes[0].plot(perpF,trailScaled,"bo")
     axes[0].set_title("Trail Gaussian With Stars")
 
-    mask = getValueMask(img, x, y, starX, starY, starR, hotX, hotY, 1)
+    mask = getValueMask(img, x, y, starX, starY, starR, gX, gY, gR, hotX, hotY, 1)
     perpF = perpF[mask]
     trailScaled = trailScaled[mask]
     
@@ -448,14 +453,14 @@ def findFitHorizontal(img, p1, p2, starX, starY, starR, gX, gY, gR, hotX, hotY, 
     
     offset = findOffsetX2(p1, p2, m, b, starX, starY, starR, gX, gY, gR, hotX, hotY, img, PC, 5, 0.1, 2, 2)
     
-    #back = estimateBackground(img, m, b, offset, starX, starY, starR, hotX, hotY)
-    #img = img-back
+    back = estimateBackground(img, m, b, offset, starX, starY, starR, gX, gY, gR, hotX, hotY)
+    img = img-back
 
-    brightness, sDev = fitBrightnessSDev(img, m, b, offset, starX, starY, starR, gX, gY, gR, hotX, hotY, trailSize)
+    #brightness, sDev = fitBrightnessSDev(img, m, b, offset, starX, starY, starR, gX, gY, gR, hotX, hotY, trailSize)
 
-    #brightness = fitBrightnessPolyX(img, p1, p2, m, b, offset, PC, starX, starY, starR, hotX, hotY)#, 2, 0.1, 2)
+    brightness = fitBrightnessPolyX(img, p1, p2, m, b, offset, PC, starX, starY, starR, gX, gY, gR, hotX, hotY)#, 2, 0.1, 2)
     
-    #sDev = fitGaussianX(img, m, b, brightness, offset, starX, starY, starR, hotX, hotY)
+    sDev = fitGaussianX(img, m, b, brightness, offset, starX, starY, starR, gX, gY, gR, hotX, hotY)
 
     return (sDev,brightness,offset)
     

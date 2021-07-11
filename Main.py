@@ -9,7 +9,7 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 
 def solve():
-    dPath = "Images/FitsImages"
+    dPath = "../Images/FitsImages/Grubb Images/G"
     outPath = "Images/NoSatellites"
     Solve.batchSolveWithClient(dPath, outPath, 10, showProgress = True, showNoStars = True, showTrail = True, showNoTrail = True, showNoTrailWithTrail = True, inverted = True)
 

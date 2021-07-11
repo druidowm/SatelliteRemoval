@@ -143,11 +143,13 @@ def getStarCoords(img, pos, showProgress):
     coords = wcs.WCS(pos)
     center = coords.all_pix2world([(img.shape[0]/2,img.shape[1]/2)],0, ra_dec_order = True)[0]
     corner = coords.all_pix2world([(0,0)],0, ra_dec_order = True)[0]
-    angle = np.sqrt((corner[0]-center[0])**2+(corner[1]-center[1])**2)/1.7
+    angle = np.sqrt((corner[0]-center[0])**2+(corner[1]-center[1])**2)
 
     c = coordinates.SkyCoord(center[0], center[1], unit=('deg', 'deg'), frame='icrs')
-    starResult = v.query_region(c, radius=angle*u.deg, catalog = ["I/337/gaia"])#["I/337/tgas","I/337/qso","I/345/"])
+    starResult = v.query_region(c, radius=angle*u.deg, catalog = ["I/337/gaia","I/337/gaia2"])#["I/337/tgas","I/337/qso","I/345/"])
     galaxyNebulaResult = v.query_region(c, radius=angle*u.deg, catalog = ["VII/118/ngc2000"])
+
+    print(starResult)
 
     starCoords = []
     mags = []
@@ -158,7 +160,11 @@ def getStarCoords(img, pos, showProgress):
 
     starPix =  np.transpose(coords.all_world2pix(starCoords,0, ra_dec_order = True))
     starPixX = starPix[0]
+    print(starPixX.shape[0])
     starPixY = starPix[1]
+
+    showImageWithDetectedHotPixels(img, "Image with Stars", starPixX, starPixY, "b", True)
+
     mags = np.array(mags)
 
     galaxyCoords = []
@@ -168,8 +174,12 @@ def getStarCoords(img, pos, showProgress):
             galaxyCoords.append((Angle(item["RAB2000"][i]+" hours").degree,Angle(item["DEB2000"][i]+" degrees").degree))
 
     galaxyPix =  np.transpose(coords.all_world2pix(galaxyCoords,0, ra_dec_order = True))
-    galaxyPixX = galaxyPix[0]
-    galaxyPixY = galaxyPix[1]
+    if galaxyPix.shape[0] != 0:
+        galaxyPixX = galaxyPix[0]
+        galaxyPixY = galaxyPix[1]
+    else:
+        galaxyPixX = np.array([])
+        galaxyPixY = np.array([])
     print(galaxyPixX)
     print(galaxyPixY)
 
@@ -274,7 +284,7 @@ def removeStars(img, starX, starY, mags, gX, gY, gR, showProgress, inverted = Fa
     starPixY = starY[mask]
     mags = mags[mask]
 
-    background = np.median(img)#(np.median(img)+np.mean(img))/2
+    background = np.mean(img)#(np.median(img)+np.mean(img))/2
     
     showImage(img, "Image With Stars", inverted)
 
@@ -291,7 +301,7 @@ def removeStars(img, starX, starY, mags, gX, gY, gR, showProgress, inverted = Fa
 
     if showProgress:
         print("Star Radii Fitted!\n")
-        #showImageWithDetectedStars(img, "Image With Detected Stars", starPixX, starPixY, imgr, "r", inverted)
+        showImageWithDetectedStars(img, "Image With Detected Stars", starPixX, starPixY, imgr, "r", inverted)
 
     if showProgress:
         print("Removing stars from the image...")
@@ -460,13 +470,7 @@ def removeOutlierPixels(img, showProgress, inverted = False):
     zScore = np.abs(img-mean)/sDev
     mask = (zScore > 4)
 
-    outlierCandidatesX = []
-    outlierCandidatesY = []
-    for i in range(0,mask.shape[0]):
-        for j in range(0,mask.shape[1]):
-            if mask[i,j] == True:
-                outlierCandidatesX.append(j)
-                outlierCandidatesY.append(i)
+    outlierCandidatesY,outlierCandidatesX = mask.nonzero()
 
     if showProgress:
         showImageWithDetectedHotPixels(img, "Image with Outlier Candidates", outlierCandidatesX, outlierCandidatesY, "b", inverted)
@@ -509,12 +513,11 @@ def removeOutlierPixels(img, showProgress, inverted = False):
 
 def findAndRemoveStars(img, imgPath, showProgress = True, inverted = False):
     showImage(img, "Image With Stars", inverted)
-    pos = PS.getStars(imgPath, showProgress)
-    starPixX,starPixY,mags,gX,gY = getStarCoords(img, pos, showProgress)
-    #imgNoStars, starX, starY, starR = removeStarsPSF(img, stars, showProgress, inverted = inverted)
-    #fileIn = open("stars.st","rb")
-    #starPixX,starPixY,mags,gX,gY = pickle.load(fileIn)
-    #fileIn.close()
+    #pos = PS.getStars(imgPath, showProgress)
+    #starPixX,starPixY,mags,gX,gY = getStarCoords(img, pos, showProgress)
+    fileIn = open("stars.st","rb")
+    starPixX,starPixY,mags,gX,gY = pickle.load(fileIn)
+    fileIn.close()
     #print(gX)
     #print(gY)
     imgNoStars, gR = removeGalaxies(img, gX, gY, showProgress, inverted = inverted, resolution = 50)

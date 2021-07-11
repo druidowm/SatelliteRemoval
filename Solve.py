@@ -20,9 +20,54 @@ def solveWithClient(imgPath, outPath, trailSize, showProgress = True, showNoStar
         print("\n\n\n\n")
 
     fitsStars = fits.open(imgPath)
-    imgStars = fitsStars[0].data.astype(np.float64)
+    imgStars = fitsStars[0].data
+    dataType = imgStars.dtype.name
+    print(dataType)
+    if dataType[0] == "u":
+        if dataType[1:4] == "int":
+            size = int(dataType[4:])
+            if size <= 8:
+                imgStars = imgStars.astype(np.float16)
+            elif size == 16:
+                imgStars = imgStars.astype(np.float32)
+            else:
+                imgStars = imgStars.astype(np.float64)
 
-    imgNoBackground = imgStars - Background2D(imgStars,100).background
+        elif dataType[1:6] == "float":
+            size = int(dataType[6:])
+            if size <= 8:
+                imgStars = imgStars.astype(np.float16)
+            elif size == 16:
+                imgStars = imgStars.astype(np.float32)
+            else:
+                print("here")
+                imgStars = imgStars.astype(np.float64)
+
+    else:
+        if dataType[0:3] == "int":
+            size = int(dataType[3:])
+            if size <= 8:
+                imgStars = imgStars.astype(np.float16)
+            elif size == 16:
+                imgStars = imgStars.astype(np.float32)
+            else:
+                imgStars = imgStars.astype(np.float64)
+
+        elif dataType[0:5] == "float":
+            size = int(dataType[5:])
+            if size <= 8:
+                imgStars = imgStars.astype(np.float16)
+            elif size == 16:
+                imgStars = imgStars.astype(np.float32)
+            else:
+                imgStars = imgStars.astype(np.float64)
+                print("here")
+
+    print(imgStars.dtype)
+
+    SR.showImage(imgStars, "Original Image", inverted)
+
+    imgNoBackground = imgStars - Background2D(imgStars,150).background
 
     SR.showImage(imgNoBackground, "Image with Background Subtracted", inverted)
 
@@ -34,7 +79,7 @@ def solveWithClient(imgPath, outPath, trailSize, showProgress = True, showNoStar
     imgNoTrail = RT.findRemoveTrail(imgNoStars, imgNoBackground, imgStars, starX, starY, starR, gX, gY, gR, hotX, hotY, trailSize, showProgress, showNoStars, showTrail, showNoTrail, showNoTrailWithTrail, inverted)
     
 
-    fits.writeto(outPath, imgNoTrail, header = fitsStars[0].header)
+    fits.writeto(outPath, imgNoTrail.astype(dataType), header = fitsStars[0].header)
 
     if showProgress:
         print("Satellites B gone!")

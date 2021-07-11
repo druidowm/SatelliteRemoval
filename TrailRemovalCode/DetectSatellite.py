@@ -15,15 +15,9 @@ def frange(start, stop, step):
         yield x
         x += step
 
-def findSatelliteScale(imdata, fit=None, debug = False, iter = 1, imgStars = None):
-    if fit == None:
-        #if type(imgStars) == type(None):
-        fit = PC(imdata) 
-        #else:
-        #    fit = PC(imgStars)
-
+def findSatelliteScale(imdata, debug = False, iter = 1, imgStars = None):
     if imdata.shape[0]*imdata.shape[1] <= 90000:
-        return findSatellite(imdata, fit)
+        return findSatellite(imdata)
     
     newX = imdata.shape[1]//4
     newY = imdata.shape[0]//4
@@ -34,8 +28,7 @@ def findSatelliteScale(imdata, fit=None, debug = False, iter = 1, imgStars = Non
     if debug:
         RT.showImage(imgScaledDown, "Image With Trail", False)
 
-    fit2 = PC(imgScaledDown)
-    p1,p2,filler = findSatelliteScale(imgScaledDown, fit2, debug, iter+1)
+    p1,p2 = findSatelliteScale(imgScaledDown, debug, iter+1)
 
     if debug:
         RT.showImageWithTrail(imgScaledDown, "Image With Trail", (p1[0],p1[1]), (p2[0],p2[1]), False)
@@ -52,13 +45,13 @@ def findSatelliteScale(imdata, fit=None, debug = False, iter = 1, imgStars = Non
 
     for i in range(0,len(p1Tests)):
         for j in range(0,len(p2Tests)):
-            count = searchLine(fit, p1Tests[i], p2Tests[j], minLen)
+            count = searchLine(imdata, p1Tests[i], p2Tests[j], minLen)
             if count > maxCount:
                 maxCount = count
                 maxP1 = p1Tests[i]
                 maxP2 = p2Tests[j]
 
-    return (maxP1,maxP2,fit)
+    return (maxP1,maxP2)
 
 
 def findTestLines(p, xScale, yScale, oldX, oldY, newX, newY, step):
@@ -109,7 +102,7 @@ def findTestLines(p, xScale, yScale, oldX, oldY, newX, newY, step):
     return tests
 
 
-def findSatellite(imdata, fit):
+def findSatellite(imdata):
     maxCount = -1
     p1 = (0,0)
     p2 = (0,0)
@@ -118,7 +111,7 @@ def findSatellite(imdata, fit):
     
     for i in range(0, imdata.shape[1]-1):
         for j in range(1, imdata.shape[1]):
-            count = searchLine(fit, (i,0), (j,imdata.shape[0]-1), minLen, median = True)
+            count = searchLine(imdata, (i,0), (j,imdata.shape[0]-1), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (i,0)
@@ -127,7 +120,7 @@ def findSatellite(imdata, fit):
     
     for i in range(0, imdata.shape[0]-1):
         for j in range(1, imdata.shape[0]):
-            count = searchLine(fit, (0,j), (imdata.shape[1]-1,i), minLen, median = True)
+            count = searchLine(imdata, (0,j), (imdata.shape[1]-1,i), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (0,j)
@@ -135,56 +128,60 @@ def findSatellite(imdata, fit):
 
     for i in range(0, imdata.shape[0]-1):
         for j in range(0, imdata.shape[1]-1):
-            count = searchLine(fit, (j,0), (0,i+1), minLen, median = True)
+            count = searchLine(imdata, (j,0), (0,i+1), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (j,0)
                 p2 = (0,i+1)
 
-            count = searchLine(fit, (j+1,imdata.shape[0]-1), (0,i+1), minLen, median = True)
+            count = searchLine(imdata, (j+1,imdata.shape[0]-1), (0,i+1), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (j+1,imdata.shape[0]-1)
                 p2 = (0,i+1)
 
-            count = searchLine(fit, (j,0), (imdata.shape[1]-1,i), minLen, median = True)
+            count = searchLine(imdata, (j,0), (imdata.shape[1]-1,i), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (j,0)
                 p2 = (imdata.shape[1]-1,i)
 
-            count = searchLine(fit, (j+1,imdata.shape[0]-1), (imdata.shape[1]-1,i), minLen, median = True)
+            count = searchLine(imdata, (j+1,imdata.shape[0]-1), (imdata.shape[1]-1,i), minLen, median = True)
             if count>maxCount:
                 maxCount = count
                 p1 = (j+1,imdata.shape[0]-1)
                 p2 = (imdata.shape[1]-1,i)
 
-    return (p1,p2,fit)
+    return (p1,p2)
 
 
-def searchLine(fit, p1, p2, minLen, median = False):
+def searchLine(img, p1, p2, minLen, median = False):
     delX = p1[0]-p2[0]
     delY = p1[1]-p2[1]
     
     if abs(delX)>abs(delY):
-        return searchLineX(fit, p1, p2, minLen, median)
+        return searchLineX(img, p1, p2, minLen, median)
     
-    return searchLineY(fit, p1, p2, minLen, median)
+    return searchLineY(img, p1, p2, minLen, median)
     
 
-def searchLineX(fit, p1, p2, minLen, median):
+def searchLineX(img, p1, p2, minLen, median):
     slope = (p1[1]-p2[1])/(p1[0]-p2[0])
     if median:
         if p1[0] <= p2[0]:
             xs = np.arange(p1[0],p2[0]+1,1.0)
             ys = (xs-p1[0])*slope+p1[1]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
 
         else:
             xs = np.arange(p2[0],p1[0]+1,1.0)
             ys = (xs-p2[0])*slope+p2[1]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
         if len(counts)>minLen:
             return np.mean(counts) + np.median(counts)
@@ -194,31 +191,39 @@ def searchLineX(fit, p1, p2, minLen, median):
         if p1[0] <= p2[0]:
             xs = np.arange(p1[0],p2[0]+1,1.0)
             ys = (xs-p1[0])*slope+p1[1]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
 
         else:
             xs = np.arange(p2[0],p1[0]+1,1.0)
             ys = (xs-p2[0])*slope+p2[1]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
         if len(counts)>minLen:
             return np.mean(counts) 
         return 0
 
-def searchLineY(fit, p1, p2, minLen, median):
+def searchLineY(img, p1, p2, minLen, median):
     slope = (p1[0]-p2[0])/(p1[1]-p2[1])
     if median:
         if p1[1] <= p2[1]:
             ys = np.arange(p1[1],p2[1]+1,1.0)
             xs = (ys-p1[1])*slope+p1[0]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
 
         else:
             ys = np.arange(p2[1],p1[1]+1,1.0)
             xs = (ys-p2[1])*slope+p2[0]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
         if len(counts)>minLen:
             return np.mean(counts) + np.median(counts)
@@ -228,13 +233,17 @@ def searchLineY(fit, p1, p2, minLen, median):
         if p1[1] <= p2[1]:
             ys = np.arange(p1[1],p2[1]+1,1.0)
             xs = (ys-p1[1])*slope+p1[0]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
 
         else:
             ys = np.arange(p2[1],p1[1]+1,1.0)
             xs = (ys-p2[1])*slope+p2[0]
-            counts = [fit(xs[i],ys[i]) for i in range(0,xs.shape[0])]
+            ys = ys.astype(int)
+            xs = xs.astype(int)
+            counts = img[ys,xs]
 
         if len(counts)>minLen:
             return np.mean(counts) 
